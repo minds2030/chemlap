@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ChemLab Academy</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#f5f7fb;--card:#fff;--tx:#14213d;--mu:#5b6785;--bd:#e2e7f1;--pr:#6c3df0;--pr2:#00b8d9;--ok:#12a150;--bad:#e5484d}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1224;--card:#161c33;--tx:#eef1fb;--mu:#9aa5c6;--bd:#273052}}
+:root[data-theme="dark"]{--bg:#0d1224;--card:#161c33;--tx:#eef1fb;--mu:#9aa5c6;--bd:#273052}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.55 system-ui,"Segoe UI",Tahoma,sans-serif}
+a{color:inherit;text-decoration:none}
+nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;display:flex;gap:10px;align-items:center;padding:12px 20px;background:var(--card);border-bottom:1px solid var(--bd);flex-wrap:wrap}
+nav b{font-size:20px;background:linear-gradient(90deg,var(--pr),var(--pr2));-webkit-background-clip:text;color:transparent}nav .sp{flex:1}
+main{max-width:1050px;margin:auto;padding:20px}
+.hero{border-radius:24px;padding:48px 28px;color:#fff;background:radial-gradient(circle at 80% 20%,#00b8d9aa,transparent 45%),linear-gradient(135deg,#4b1fd1,#6c3df0 55%,#c026d3);position:relative;overflow:hidden}
+.hero h1{font-size:clamp(28px,5vw,48px);margin:0 0 10px;line-height:1.15}.hero p{max-width:560px;opacity:.92;margin:0 0 20px}
+.hero .mol{position:absolute;right:-20px;top:-20px;font-size:190px;opacity:.12}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:16px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:18px;padding:18px}
+.gc{display:block;overflow:hidden;padding:0;transition:.2s}.gc:hover{transform:translateY(-4px);box-shadow:0 12px 28px #6c3df02e}
+.gc .th{height:110px;display:grid;place-items:center;font-size:52px;color:#fff}.gc .bd{padding:14px 16px}.gc h3{margin:0 0 4px;font-size:17px}
+.mu{color:var(--mu);font-size:14px}h2{margin:28px 0 12px}
+button,.btn{font:inherit;border:0;border-radius:12px;padding:10px 16px;cursor:pointer;background:var(--pr);color:#fff;font-weight:600;display:inline-block}
+.btn.o,button.o{background:transparent;color:var(--tx);border:1px solid var(--bd)}button.g{background:var(--ok)}button.r{background:var(--bad)}button.sm{padding:5px 10px;font-size:13px;border-radius:8px}
+input,select,textarea{font:inherit;width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);margin:4px 0 10px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.row>*{width:auto}.row input,.row select{flex:1;min-width:140px}
+.vid{position:relative;padding-top:56.25%;border-radius:16px;overflow:hidden;background:#000}.vid iframe,.vid div{position:absolute;inset:0;width:100%;height:100%;border:0;display:grid;place-items:center;color:#fff}
+.tag{font-size:12px;padding:2px 9px;border-radius:99px;background:var(--bd);margin-inline-end:4px}.tag.ok{background:#12a15022;color:var(--ok)}.tag.bad{background:#e5484d22;color:var(--bad)}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}.tabs a{padding:8px 14px;border-radius:10px;border:1px solid var(--bd);background:var(--card)}.tabs a.on{background:var(--pr);color:#fff;border-color:var(--pr)}
+table{width:100%;border-collapse:collapse}td,th{padding:8px;border-bottom:1px solid var(--bd);text-align:start;vertical-align:top}.tw{overflow-x:auto}
+.opt{display:block;padding:8px 12px;border:1px solid var(--bd);border-radius:10px;margin:6px 0;cursor:pointer}.opt input{width:auto;margin:0 8px 0 0}.opt.ok{border-color:var(--ok);background:#12a15018}.opt.bad{border-color:var(--bad);background:#e5484d18}
+.ar{direction:rtl;text-align:right}
+</style></head><body>
+<nav id="nav"></nav><main id="app"></main>
+<script>
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const uid=()=>Math.random().toString(36).slice(2,9);
+const TK='cl_tok';
+let D={stages:[],grades:[],units:[],lessons:[],quizzes:{},students:[],qs:[],pays:[],price:30,wallet:''};
+let me=null,adm=false,panel='',res=null;
+const api=async(p,b)=>{try{const t=localStorage.getItem(TK);const r=await fetch('/api/'+p,{method:b?'POST':'GET',headers:{'content-type':'application/json',...(t?{authorization:'Bearer '+t}:{})},body:b?JSON.stringify(b):undefined});const j=await r.json().catch(()=>({}));if(!r.ok){if(r.status===401&&t&&p==='state')localStorage.removeItem(TK);else alert(j.error||'Error');return null}return j}catch(e){alert('Network error');return null}};
+const refresh=async()=>{const j=await api('state');if(j){D=j;me=j.me||null;adm=j.role==='admin'}};
+const save=()=>api('save',{stages:D.stages,grades:D.grades,units:D.units,lessons:D.lessons,quizzes:D.quizzes,price:D.price,wallet:D.wallet}).then(()=>reload());
+const P=(p,b)=>api(p,b).then(j=>{if(j)reload();return j});
+const syncMe=()=>{};
+const G=id=>D.grades.find(x=>x.id===id),U=id=>D.units.find(x=>x.id===id),L=id=>D.lessons.find(x=>x.id===id);
+const yt=u=>(String(u).match(/(?:v=|youtu\.be\/|embed\/|shorts\/)([\w-]{11})/)||[])[1];
+const sub=(u,s)=>me&&!me.blocked&&(me.subs[u+':'+s]||0)>Date.now();
+const gradeSub=(g,s)=>D.units.some(u=>u.grade===g&&sub(u.id,s));
+const days=t=>Math.ceil((t-Date.now())/864e5);
+const opts=(arr,f)=>arr.map(f).join('');
+const unitOpts=()=>opts(D.units,u=>`<option value="${u.id}">${esc(G(u.grade)?.name)} › ${esc(u.name)}</option>`);
+
+function nav(){
+ $nav.innerHTML=`<a href="#/"><b>⚗️ ChemLab Academy</b></a><span class="sp"></span>`+
+ (me?`<span class="mu">Hi, ${esc(me.name)}</span><a class="btn o" href="#/me">My subscriptions</a><button class="o" data-a="out">Logout</button>`:`<a class="btn o" href="#/login">Login / Register</a>`)+
+ `<a class="btn o" href="#/admin/students">Teacher</a>`;
+}
+function home(){
+ const sg=D.stages.map(s=>{const gs=D.grades.filter(g=>g.stage===s.id);return gs.length?`<h2>${esc(s.name)}</h2><div class="grid">`+opts(gs,g=>`<a class="card gc" href="#/grade/${g.id}"><div class="th" style="background:linear-gradient(135deg,${g.c},#14213d)">${g.i}</div><div class="bd"><h3>${esc(g.name)}</h3><span class="mu">${D.units.filter(u=>u.grade===g.id).length} units · ${D.lessons.filter(l=>D.units.some(u=>u.id===l.unit&&u.grade===g.id)).length} free lessons</span></div></a>`)+`</div>`:''}).join('');
+ return `<div class="hero"><div class="mol">⚛</div><h1>Learn Science &amp; Chemistry,<br>the clear way.</h1><p>Free video lessons for every grade. No sign-up needed to watch. Upgrade for direct teacher Q&amp;A and exam-style practice.</p><a class="btn" style="background:#fff;color:#4b1fd1" href="#browse" onclick="document.querySelector('#grades').scrollIntoView({behavior:'smooth'});return false">Start learning ↓</a></div><div id="grades">${sg||'<p class="mu">No curricula yet.</p>'}</div>`;
+}
+function grade(id){
+ const g=G(id);if(!g)return '<p>Not found.</p>';
+ const us=D.units.filter(u=>u.grade===id);
+ return `<a class="mu" href="#/">← All curricula</a><h2>${g.i} ${esc(g.name)}</h2>`+(opts(us,u=>`<div class="card" style="margin-bottom:14px"><div class="row"><b style="flex:1">${esc(u.name)}</b><a class="btn o sm" href="#/exam/unit/${u.id}">📝 Unit exam</a></div>`+opts(D.lessons.filter(l=>l.unit===u.id),l=>`<a href="#/lesson/${l.id}" style="display:block;padding:10px 0;border-top:1px solid var(--bd)">▶ ${esc(l.title)}</a>`)+`</div>`)||'<p class="mu">No units yet.</p>')+`<a class="btn" href="#/exam/final/${id}">🎓 Final exam (end of curriculum)</a>`;
+}
+function gate(unit,svc,label){
+ if(!me)return `<div class="card">🔒 ${label} needs an account. <a class="btn sm" href="#/login">Login / Register</a></div>`;
+ if(me.blocked)return `<div class="card"><span class="tag bad">Blocked</span> Your account is blocked. Contact the teacher.</div>`;
+ const pend=D.pays.find(p=>p.sid===me.id&&p.unit===unit&&p.svc===svc&&p.st==='pending');
+ if(pend)return `<div class="card">⏳ Payment request sent (ref ${esc(pend.ref)}). The teacher will activate it soon.</div>`;
+ return `<div class="card ar"><b>🔒 ${label} — ${D.price} جنيه / شهر لهذه الوحدة</b><p class="mu">حوّل ${D.price} جنيه إلى محفظة اتصالات: <b dir="ltr">${esc(D.wallet)}</b> ثم اكتب رقم العملية أو رقم المحفظة المحوَّل منها:</p><input id="ref" dir="ltr" placeholder="Transaction ID / sender number"><button data-a="pay" data-u="${unit}" data-s="${svc}">إرسال طلب التفعيل</button></div>`;
+}
+function lesson(id){
+ const l=L(id);if(!l)return '<p>Not found.</p>';const u=U(l.unit),g=G(u.grade),v=yt(l.yt);
+ const qs=D.qs.filter(q=>q.lid===id&&me&&q.sid===me.id);
+ let p='';
+ if(panel==='ask')p=sub(u.id,'ask')?`<div class="card"><b>Ask the teacher</b><textarea id="qt" rows="3" placeholder="Type your question…"></textarea><button data-a="ask" data-l="${id}">Send</button>${opts(qs,q=>`<div style="border-top:1px solid var(--bd);margin-top:10px;padding-top:8px"><b>Q:</b> ${esc(q.t)}<br>${q.a?`<b style="color:var(--ok)">Teacher:</b> ${esc(q.a)}`:'<span class="tag">Waiting for answer</span>'}</div>`)}</div>`:gate(u.id,'ask','Ask the Teacher');
+ if(panel==='prac')p=sub(u.id,'prac')?(D.quizzes['lesson:'+id]?`<div class="card">${quiz('lesson:'+id)}</div>`:'<div class="card mu">No practice for this lesson yet.</div>'):gate(u.id,'prac','Practice');
+ return `<a class="mu" href="#/grade/${g.id}">← ${esc(g.name)} · ${esc(u.name)}</a><h2>${esc(l.title)}</h2><div class="vid">${v?`<iframe src="https://www.youtube-nocookie.com/embed/${v}" allowfullscreen allow="accelerometer;encrypted-media;picture-in-picture"></iframe>`:'<div>Video link not set</div>'}</div><div class="row" style="margin:14px 0"><button data-a="panel" data-p="ask">💬 Ask the Teacher</button><button data-a="panel" data-p="prac" style="background:var(--pr2)">🧠 Take Practice</button></div>${p}`;
+}
+function quiz(key){
+ const qs=D.quizzes[key]||[];if(!qs.length)return '<p class="mu">No questions yet.</p>';
+ return qs.map((q,i)=>`<p><b>${i+1}. ${esc(q.q)}</b></p>`+q.o.map((o,j)=>`<label class="opt ${res?(j===q.a?'ok':res[i]===j?'bad':''):''}"><input type="radio" name="q${i}" value="${j}" ${res&&res[i]===j?'checked':''}>${esc(o)}</label>`).join('')).join('')+(res?`<h3>Score: ${res.filter((r,i)=>r===qs[i].a).length} / ${qs.length}</h3><button class="o" data-a="retry">Try again</button>`:`<button data-a="grade" data-k="${key}">Submit answers</button>`);
+}
+function exam(type,id){
+ const key=type+':'+id,g=type==='final'?G(id):G(U(id)?.grade);if(!g)return '<p>Not found.</p>';
+ const ok=type==='final'?gradeSub(id,'prac'):sub(id,'prac');
+ return `<a class="mu" href="#/grade/${g.id}">← ${esc(g.name)}</a><h2>${type==='final'?'🎓 Final exam':'📝 Unit exam'} · ${esc(type==='final'?g.name:U(id).name)}</h2>`+(ok?`<div class="card">${quiz(key)}</div>`:gate(type==='final'?(D.units.find(u=>u.grade===id)||{}).id:id,'prac','Exams &amp; practice'));
+}
+function login(){
+ return `<div class="grid"><div class="card"><h3>Login</h3><input id="lp" placeholder="Phone" dir="ltr"><input id="lw" type="password" placeholder="Password"><button data-a="login">Login</button></div><div class="card"><h3>Create account</h3><input id="rn" placeholder="Full name"><input id="rp" placeholder="Phone" dir="ltr"><input id="rw" type="password" placeholder="Password"><button data-a="reg">Register</button></div></div>`;
+}
+function mine(){
+ if(!me)return login();
+ const a=Object.entries(me.subs).filter(([k,t])=>t>Date.now()).map(([k,t])=>{const[u,s]=k.split(':');return `<tr><td>${esc(U(u)?.name)}</td><td>${s==='ask'?'Ask the Teacher':'Practice'}</td><td>${days(t)} days left</td></tr>`}).join('');
+ return `<h2>My subscriptions</h2><div class="card tw"><table>${a||'<tr><td class="mu">No active subscriptions.</td></tr>'}</table></div>`;
+}
+/* ADMIN */
+function admin(tab){
+ if(!adm)return `<div class="card" style="max-width:360px"><h3>Teacher login</h3><input id="ap" type="password" placeholder="Admin password"><button data-a="alogin">Enter</button></div>`;
+ const T=[['students','Students'],['pay','Payments'],['qa','Questions'],['qb','Question builder'],['vid','Videos'],['set','Settings']];
+ const tabs=`<div class="tabs">${T.map(t=>`<a href="#/admin/${t[0]}" class="${tab===t[0]?'on':''}">${t[1]}${t[0]==='pay'&&D.pays.some(p=>p.st==='pending')?' 🔴':''}${t[0]==='qa'&&D.qs.some(q=>!q.a)?' 🔴':''}</a>`).join('')}<button class="o sm" data-a="alogout">Exit</button></div>`;
+ let b='';
+ if(tab==='students'){
+  b=`<div class="card tw"><table><tr><th>Student</th><th>Active</th><th>Activate 30 days</th><th></th></tr>`+(opts(D.students,s=>`<tr><td><b>${esc(s.name)}</b><br><span class="mu" dir="ltr">${esc(s.phone)}</span>${s.blocked?'<br><span class="tag bad">Blocked</span>':''}</td><td>${Object.entries(s.subs).filter(([k,t])=>t>Date.now()).map(([k,t])=>`<span class="tag ok">${esc(U(k.split(':')[0])?.name||'?').slice(0,18)} · ${k.split(':')[1]}</span>`).join('')||'—'}</td><td><select id="sel${s.id}">${D.units.map(u=>['ask','prac'].map(v=>`<option value="${u.id}:${v}">${esc(u.name)} — ${v==='ask'?'Ask':'Practice'}</option>`).join('')).join('')}</select><button class="g sm" data-a="act" data-s="${s.id}">Activate</button></td><td><button class="sm ${s.blocked?'g':'r'}" data-a="blk" data-s="${s.id}">${s.blocked?'Unblock':'Block'}</button></td></tr>`)||'<tr><td colspan=4 class="mu">No students registered yet.</td></tr>')+`</table></div>`;
+ }
+ if(tab==='pay')b=`<div class="card tw"><table><tr><th>Student</th><th>Unit / service</th><th>Ref</th><th></th></tr>`+(opts(D.pays.filter(p=>p.st==='pending'),p=>`<tr><td>${esc(D.students.find(s=>s.id===p.sid)?.name)}</td><td>${esc(U(p.unit)?.name)} — ${p.svc}</td><td dir="ltr">${esc(p.ref)}</td><td><button class="g sm" data-a="ok" data-i="${p.id}">Approve</button> <button class="r sm" data-a="no" data-i="${p.id}">Reject</button></td></tr>`)||'<tr><td class="mu">No pending requests.</td></tr>')+`</table></div>`;
+ if(tab==='qa')b=opts([...D.qs].sort((a,b)=>!!a.a-!!b.a),q=>`<div class="card" style="margin-bottom:12px"><span class="mu">${esc(D.students.find(s=>s.id===q.sid)?.name)} · ${esc(L(q.lid)?.title)}</span><p><b>${esc(q.t)}</b></p><textarea id="ans${q.id}" rows="2" placeholder="Your answer…">${esc(q.a||'')}</textarea><button class="sm" data-a="reply" data-i="${q.id}">${q.a?'Update answer':'Send answer'}</button></div>`)||'<p class="mu">No questions yet.</p>';
+ if(tab==='qb'){
+  const ks=[...D.lessons.map(l=>['lesson:'+l.id,'Lesson practice: '+l.title]),...D.units.map(u=>['unit:'+u.id,'Unit exam: '+u.name]),...D.grades.map(g=>['final:'+g.id,'Final exam: '+g.name])];
+  const k=window.qk||ks[0]?.[0];
+  b=`<div class="card"><select id="qk" data-a="qk">${ks.map(x=>`<option value="${x[0]}" ${x[0]===k?'selected':''}>${esc(x[1])}</option>`).join('')}</select><input id="qq" placeholder="Question"><div class="grid" style="gap:0 10px"><input id="o0" placeholder="Option A"><input id="o1" placeholder="Option B"><input id="o2" placeholder="Option C"><input id="o3" placeholder="Option D"></div><div class="row"><select id="qa"><option value="0">Correct: A</option><option value="1">Correct: B</option><option value="2">Correct: C</option><option value="3">Correct: D</option></select><button data-a="addq">Add question</button></div></div>`+opts(D.quizzes[k]||[],(q,i)=>`<div class="card" style="margin-top:10px"><b>${i+1}. ${esc(q.q)}</b> <button class="r sm" data-a="delq" data-k="${k}" data-i="${i}">✕</button><br><span class="mu">${q.o.map((o,j)=>(j===q.a?'✅ ':'')+esc(o)).join(' · ')}</span></div>`);
+ }
+ if(tab==='vid')b=`<div class="card"><select id="vu">${unitOpts()}</select><input id="vt" placeholder="Lesson title"><input id="vy" dir="ltr" placeholder="YouTube link"><button data-a="addv">Add lesson</button></div><div class="card tw" style="margin-top:12px"><table>`+opts(D.lessons,l=>`<tr><td>${esc(U(l.unit)?.name)}</td><td>${esc(l.title)}</td><td class="mu" dir="ltr">${yt(l.yt)||'—'}</td><td><button class="r sm" data-a="del" data-t="lessons" data-i="${l.id}">✕</button></td></tr>`)+`</table></div>`;
+ if(tab==='set')b=`<div class="grid"><div class="card"><h3>Stage</h3><input id="sn" placeholder="e.g. Primary"><button data-a="adds">Add stage</button>${opts(D.stages,s=>`<p>${esc(s.name)} <button class="r sm" data-a="del" data-t="stages" data-i="${s.id}">✕</button></p>`)}</div><div class="card"><h3>Grade</h3><select id="gs">${opts(D.stages,s=>`<option value="${s.id}">${esc(s.name)}</option>`)}</select><input id="gn" placeholder="e.g. Grade 11 Chemistry"><button data-a="addg">Add grade</button>${opts(D.grades,g=>`<p>${esc(g.name)} <button class="r sm" data-a="del" data-t="grades" data-i="${g.id}">✕</button></p>`)}</div><div class="card"><h3>Unit</h3><select id="ug">${opts(D.grades,g=>`<option value="${g.id}">${esc(g.name)}</option>`)}</select><input id="un" placeholder="e.g. Unit 2: Bonding"><button data-a="addu">Add unit</button>${opts(D.units,u=>`<p>${esc(u.name)} <button class="r sm" data-a="del" data-t="units" data-i="${u.id}">✕</button></p>`)}</div><div class="card"><h3>Payment &amp; security</h3><label class="mu">Etisalat wallet number</label><input id="sw" dir="ltr" value="${esc(D.wallet)}"><label class="mu">Price (EGP / unit / service / month)</label><input id="sp" type="number" value="${D.price}"><button data-a="sets">Save</button></div></div>`;
+ return tabs+b;
+}
+/* ACTIONS */
+const v=i=>document.getElementById(i)?.value.trim();
+const A={
+ retry(){res=null;go()},
+ out(){localStorage.removeItem(TK);location.hash='#/';reload()},
+ panel(d){panel=panel===d.p?'':d.p;res=null;go()},
+ async login(){const j=await api('login',{phone:v('lp'),pass:v('lw')});if(j){localStorage.setItem(TK,j.token);location.hash='#/';reload()}},
+ async reg(){const n=v('rn'),p=v('rp'),w=v('rw');if(!n||!p||!w)return alert('Fill all fields');const j=await api('register',{name:n,phone:p,pass:w});if(j){localStorage.setItem(TK,j.token);location.hash='#/';reload()}},
+ pay(d){const r=v('ref');if(!r)return alert('Enter the transfer reference');P('pay',{unit:d.u,svc:d.s,ref:r})},
+ ask(d){const t=v('qt');if(t)P('ask',{lid:d.l,t})},
+ grade(d){const qs=D.quizzes[d.k]||[];res=qs.map((q,i)=>{const c=document.querySelector(`input[name=q${i}]:checked`);return c?+c.value:-1});go()},
+ async alogin(){const j=await api('alogin',{pass:v('ap')});if(j){localStorage.setItem(TK,j.token);reload()}},alogout(){A.out()},
+ act(d){P('admin',{op:'act',sid:d.s,key:document.getElementById('sel'+d.s).value})},
+ blk(d){P('admin',{op:'blk',sid:d.s})},
+ ok(d){P('admin',{op:'ok',id:d.i})},
+ no(d){P('admin',{op:'no',id:d.i})},
+ reply(d){P('admin',{op:'reply',id:d.i,a:v('ans'+d.i)})},
+ qk(){window.qk=v('qk');go()},
+ addq(){const k=v('qk'),o=[0,1,2,3].map(i=>v('o'+i)).filter(Boolean),q=v('qq');if(!q||o.length<2)return alert('Need a question and at least 2 options');(D.quizzes[k]=D.quizzes[k]||[]).push({q,o,a:Math.min(+v('qa'),o.length-1)});save();go()},
+ delq(d){D.quizzes[d.k].splice(+d.i,1);save();go()},
+ addv(){const t=v('vt'),y=v('vy');if(!v('vu'))return alert('Add a unit first in Settings');if(!t||!yt(y))return alert('Title and a valid YouTube link required');D.lessons.push({id:uid(),unit:v('vu'),title:t,yt:y});save();go()},
+ del(d){if(!confirm('Delete?'))return;D[d.t]=D[d.t].filter(x=>x.id!==d.i);save();go()},
+ adds(){if(v('sn')){D.stages.push({id:uid(),name:v('sn')});save();go()}},
+ addg(){if(v('gn')&&v('gs')){const cs=['#00b8d9','#6c3df0','#c026d3','#f59e0b','#12a150'];D.grades.push({id:uid(),stage:v('gs'),name:v('gn'),c:cs[D.grades.length%5],i:['🔬','⚗️','🧪','⚛️','🧬'][D.grades.length%5]});save();go()}},
+ addu(){if(v('un')&&v('ug')){D.units.push({id:uid(),grade:v('ug'),name:v('un')});save();go()}},
+ sets(){D.wallet=v('sw');D.price=+v('sp')||30;save();alert('Saved')}
+};
+document.addEventListener('click',e=>{const a=e.target.closest('[data-a]');if(a&&a.tagName!=='SELECT'&&A[a.dataset.a])A[a.dataset.a](a.dataset)});
+document.addEventListener('change',e=>{if(e.target.id==='qk')A.qk()});
+const $nav=document.getElementById('nav'),$app=document.getElementById('app');
+let lastH='';
+function go(){
+ syncMe();nav();
+ const h=location.hash.slice(2).split('/');if(h.join('/')!==lastH){panel='';res=null;lastH=h.join('/')}
+ const r={'':()=>home(),grade:()=>grade(h[1]),lesson:()=>lesson(h[1]),exam:()=>exam(h[1],h[2]),login:()=>login(),me:()=>mine(),admin:()=>admin(h[1]||'students')}[h[0]];
+ $app.innerHTML=(r||home)();
+ if(!(document.activeElement&&document.activeElement.id))window.scrollTo(0,h[0]===''?0:window.scrollY);
+}
+const reload=async()=>{await refresh();go()};
+addEventListener('hashchange',()=>{window.scrollTo(0,0);reload()});reload();
+</script></body></html>
